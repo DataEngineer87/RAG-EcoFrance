@@ -6,17 +6,26 @@ import faiss
 import numpy as np
 import json
 import ollama
+import os
 
-# CONFIG
-index_file = "docs.index"
-docs_file = "docs.json"
+# === CONFIG ===
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))  # dossier du script
+index_file = os.path.join(BASE_DIR, "docs.index")
+docs_file = os.path.join(BASE_DIR, "docs.json")
 model = "mistral"
 k = 4
 score_threshold = None
 
-# Charger index et documents
+# === Charger index et documents ===
 @st.cache_resource
 def load_index_and_docs():
+    if not os.path.exists(index_file):
+        st.error(f"❌ Fichier introuvable : {index_file}")
+        st.stop()
+    if not os.path.exists(docs_file):
+        st.error(f"❌ Fichier introuvable : {docs_file}")
+        st.stop()
+
     index = faiss.read_index(index_file)
     with open(docs_file, "r", encoding="utf-8") as f:
         docs = json.load(f)
@@ -24,16 +33,15 @@ def load_index_and_docs():
 
 index, docs = load_index_and_docs()
 
-# ---- UI PRINCIPALE ----
+# === UI PRINCIPALE ===
 st.set_page_config(page_title="Chatbot RAG", page_icon="🤖", layout="centered")
 
 st.markdown(
-    "<h4 style='text-align: center;'>🤖 CHATBOT RAG - INFORMATION SUR L'ÉCONOMIE FRANÇAISE</h4>",
+    "<h3 style='text-align: center;'>🤖 CHATBOT RAG - INFORMATION SUR L'ÉCONOMIE FRANÇAISE</h3>",
     unsafe_allow_html=True
 )
-
 st.markdown(
-    "<h4 style='text-align: center;'> Que souhaitez vous savoir sur l'économie française ? </h4>",
+    "<h4 style='text-align: center;'>Que souhaitez-vous savoir sur l'économie française ?</h4>",
     unsafe_allow_html=True
 )
 st.divider()
@@ -41,7 +49,7 @@ st.divider()
 question = st.text_input("💬 Entrez votre question :", placeholder="Ex: Quels sont les facteurs influençant le chômage ?")
 submit = st.button("🚀 Envoyer")
 
-# ---- FONCTIONS ----
+# === FONCTIONS ===
 def retrieve_context(query, k=4):
     q_emb_resp = ollama.embed(model=model, input=query)
     q_emb = q_emb_resp.get("embeddings", [q_emb_resp.get("embedding")])[0]
@@ -69,7 +77,7 @@ Réponds de manière claire et concise en t'appuyant sur le contexte.
 Si l'information n'est pas dans le contexte, dis-le et propose comment l'obtenir."""
     return prompt
 
-# ---- CHAT ----
+# === CHAT ===
 if submit and question.strip():
     with st.spinner("🔎 Recherche dans l'index et génération de la réponse..."):
         retrieved = retrieve_context(question, k=k)
