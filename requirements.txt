@@ -1,4 +1,4 @@
-openai==1.31.0
+huggingface_hub
 faiss_cpu==1.12.0
 numpy==2.3.3
 ollama==0.5.4
