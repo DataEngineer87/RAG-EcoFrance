@@ -1,7 +1,7 @@
-## WebApp.py (Chatbot RAG avec Hugging Face API)
+# WebApp.py (Chatbot RAG avec Hugging Face API)
 #### Prérequis :
-## - docs.index et docs.json créés par build_index.py
-#"  - Hugging Face API key ajoutée dans Streamlit Cloud (Secrets : HUGGINGFACE_API_KEY)
+#  - docs.index et docs.json créés par build_index.py
+#  - Hugging Face API key ajoutée dans Streamlit Cloud (Secrets : HUGGINGFACE_API_KEY)
 
 import streamlit as st
 import faiss
@@ -69,17 +69,22 @@ submit = st.button("🚀 Envoyer")
 def embed_query(query: str):
     """Créer un embedding via Hugging Face et renvoyer un np.array float32 2D pour Faiss"""
     resp = client.feature_extraction(model=embedding_model, inputs=query)
-    
-    # Selon le modèle, resp peut être un dict ou une liste
+
+    # Récupérer l'embedding de la réponse
     if isinstance(resp, dict):
         emb = resp.get("embedding") or resp.get("embeddings")
     else:
         emb = resp
-    
-    # Convertir en np.array float32 et assurer la forme 2D
+
+    # Transformer en np.array float32
     emb_array = np.array(emb, dtype="float32")
+
+    # S'assurer que c'est 2D
     if emb_array.ndim == 1:
         emb_array = emb_array.reshape(1, -1)
+    elif emb_array.ndim > 2:
+        emb_array = emb_array[0]  # prendre la première séquence si 3D
+
     return emb_array
 
 def retrieve_context(query, k=4):
@@ -114,7 +119,6 @@ def generate_answer(prompt: str):
         inputs=prompt,
         max_new_tokens=300
     )
-    # output peut être une liste de dicts avec 'generated_text'
     if isinstance(output, list) and len(output) > 0:
         return output[0].get("generated_text", "")
     return str(output)
@@ -132,7 +136,6 @@ if submit and question.strip():
         prompt = build_prompt(question, retrieved)
         answer = generate_answer(prompt)
 
-        # Affichage stylé de la réponse
         st.subheader("🤖 Réponse du modèle")
         st.markdown(
             f"""
