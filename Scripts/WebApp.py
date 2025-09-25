@@ -27,7 +27,8 @@ if not hf_token:
     st.error("❌ Clé Hugging Face API manquante. Ajoutez-la dans les Secrets de Streamlit Cloud.")
     st.stop()
 
-client = InferenceClient(token=hf_token)
+# Crée un client pour le modèle d'embeddings
+client = InferenceClient(model=embedding_model, token=hf_token)
 
 # === Charger index et documents ===
 @st.cache_resource
@@ -71,10 +72,9 @@ def embed_query(query: str):
     Crée un embedding via Hugging Face et renvoie un np.array float32 2D
     Compatible avec Faiss.
     """
-    # Correction : utiliser text_embeddings() au lieu de embeddings()
-    resp = client.text_embeddings(model=embedding_model, input=query)
-    emb = resp['data'][0]['embedding']
-    emb_array = np.array(emb, dtype="float32").reshape(1, -1)  # 2D pour Faiss
+    # Utilisation de la méthode adaptée pour la version actuelle
+    emb = client.embed_text(query)  # retourne une liste de floats
+    emb_array = np.array(emb, dtype="float32").reshape(1, -1)
     return emb_array
 
 def retrieve_context(query, k=4):
