@@ -1,6 +1,6 @@
 # WebApp.py (Chatbot RAG avec Hugging Face API)
-# Prérequis :
-#  - docs.index et docs.json créés par build_index.py
+###### Prérequis :
+#####  - docs.index et docs.json créés par build_index.py
 #  - Hugging Face API key ajoutée dans Streamlit Cloud (Secrets : HUGGINGFACE_API_KEY)
 
 import streamlit as st
@@ -68,26 +68,28 @@ submit = st.button("🚀 Envoyer")
 # === FONCTIONS ===
 def embed_query(query: str):
     """
-    Créer un embedding via Hugging Face et renvoyer un np.array float32 2D
-    Compatible avec différents formats de sortie de l'API.
+    Crée un embedding via Hugging Face et renvoie un np.array float32 2D pour Faiss.
+    Compatible avec toutes les sorties possibles de client.feature_extraction().
     """
     resp = client.feature_extraction(model=embedding_model, inputs=query)
 
-    # Cas dict : {'embedding': [...]} ou {'embeddings': [...]}
-    if isinstance(resp, dict):
+    # Cas liste de listes : [[...]]
+    if isinstance(resp, list):
+        emb_array = np.array(resp, dtype="float32")
+    # Cas dictionnaire : {'embedding': [...]} ou {'embeddings': [...]}
+    elif isinstance(resp, dict):
         emb = resp.get("embedding") or resp.get("embeddings")
         if emb is None:
             raise ValueError("La réponse de l'API Hugging Face ne contient pas d'embedding.")
+        emb_array = np.array(emb, dtype="float32")
     else:
-        emb = resp  # Cas liste ou np.array déjà renvoyé
-
-    emb_array = np.array(emb, dtype="float32")
+        raise TypeError(f"Format inattendu de la réponse feature_extraction : {type(resp)}")
 
     # S'assurer que c'est 2D pour Faiss
     if emb_array.ndim == 1:
         emb_array = emb_array.reshape(1, -1)
     elif emb_array.ndim > 2:
-        emb_array = emb_array[0]  # prendre la première séquence si 3D
+        emb_array = emb_array[0]
 
     return emb_array
 
@@ -123,6 +125,7 @@ def generate_answer(prompt: str):
         inputs=prompt,
         max_new_tokens=300
     )
+    # output peut être une liste de dicts avec 'generated_text'
     if isinstance(output, list) and len(output) > 0:
         return output[0].get("generated_text", "")
     return str(output)
@@ -140,6 +143,7 @@ if submit and question.strip():
         prompt = build_prompt(question, retrieved)
         answer = generate_answer(prompt)
 
+        # Affichage stylé de la réponse
         st.subheader("🤖 Réponse du modèle")
         st.markdown(
             f"""
