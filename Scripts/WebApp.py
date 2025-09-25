@@ -1,4 +1,3 @@
-#### CODE COPMLET
 # WebApp.py (Chatbot RAG avec Hugging Face API)
 ###### Prérequis :
 #####  - docs.index et docs.json créés par build_index.py
@@ -72,7 +71,8 @@ def embed_query(query: str):
     Crée un embedding via Hugging Face et renvoie un np.array float32 2D
     Compatible avec Faiss.
     """
-    resp = client.embeddings(model=embedding_model, input=query)
+    # Correction : utiliser text_embeddings() au lieu de embeddings()
+    resp = client.text_embeddings(model=embedding_model, input=query)
     emb = resp['data'][0]['embedding']
     emb_array = np.array(emb, dtype="float32").reshape(1, -1)  # 2D pour Faiss
     return emb_array
