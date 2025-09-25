@@ -1,8 +1,4 @@
-# app.py (Chatbot RAG avec Hugging Face API)
-# Prérequis :
-#  - docs.index et docs.json créés par build_index.py
-#  - HF API key stockée dans clehug.env ou dans Secrets de Streamlit Cloud
-
+## WebApp.py (Chatbot RAG avec Hugging Face APPLICATION)
 import streamlit as st
 import faiss
 import numpy as np
@@ -10,6 +6,9 @@ import json
 import os
 from huggingface_hub import InferenceClient
 from dotenv import load_dotenv
+
+# === CHARGER VARIABLES D'ENVIRONNEMENT ===
+load_dotenv("Scripts/clehug.env")  # <-- charge ta clé depuis le fichier .env local si dispo
 
 # === CONFIG ===
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))  # dossier du script
@@ -19,18 +18,12 @@ docs_file = os.path.join(BASE_DIR, "docs.json")
 # Modèles Hugging Face
 embedding_model = "sentence-transformers/all-MiniLM-L6-v2"
 llm_model = "mistralai/Mistral-7B-Instruct-v0.2"
-
 k = 4
 
-# === Charger le fichier clehug.env si présent (local) ===
-dotenv_path = os.path.join(BASE_DIR, "clehug.env")
-if os.path.exists(dotenv_path):
-    load_dotenv(dotenv_path=dotenv_path)
-
-# === Récupérer la clé HF depuis l'environnement (Secrets ou .env) ===
+# === Initialisation Hugging Face API ===
 hf_token = os.environ.get("HUGGINGFACE_API_KEY")
 if not hf_token:
-    st.error("❌ Clé Hugging Face API manquante. Ajoutez-la dans clehug.env ou dans les Secrets de Streamlit Cloud.")
+    st.error("❌ Clé Hugging Face API manquante. Ajoutez-la dans les Secrets de Streamlit Cloud.")
     st.stop()
 
 client = InferenceClient(token=hf_token)
@@ -65,17 +58,20 @@ st.markdown(
 )
 st.divider()
 
-question = st.text_input("💬 Entrez votre question :", placeholder="Ex: Quels sont les facteurs influençant le chômage ?")
+question = st.text_input(
+    "💬 Entrez votre question :", 
+    placeholder="Ex: Quels sont les facteurs influençant le chômage ?"
+)
 submit = st.button("🚀 Envoyer")
 
 # === FONCTIONS ===
 def embed_query(query: str):
     """Créer un embedding via Hugging Face"""
-    return client.feature_extraction(model=embedding_model, inputs=query)
+    emb = client.feature_extraction(model=embedding_model, inputs=query)
+    return np.array(emb, dtype="float32").reshape(1, -1)  # conversion propre
 
 def retrieve_context(query, k=4):
-    q_emb = embed_query(query)
-    qv = np.array([q_emb], dtype="float32")
+    qv = embed_query(query)  # déjà un np.array 2D float32
     D, I = index.search(qv, k=k)
     results = []
     for dist, idx in zip(D[0], I[0]):
