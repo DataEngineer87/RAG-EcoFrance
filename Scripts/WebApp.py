@@ -1,6 +1,6 @@
 # WebApp.py (Chatbot RAG avec Hugging Face API)
-###### Prérequis :
-#####  - docs.index et docs.json créés par build_index.py
+# Prérequis :
+# - docs.index et docs.json créés par build_index.py
 #  - Hugging Face API key ajoutée dans Streamlit Cloud (Secrets : HUGGINGFACE_API_KEY)
 
 import streamlit as st
@@ -72,9 +72,11 @@ def embed_query(query: str):
     Crée un embedding via Hugging Face et renvoie un np.array float32 2D
     Compatible avec Faiss.
     """
-    # Utilisation de la méthode adaptée pour la version actuelle
-    emb = client.embed_text(query)  # retourne une liste de floats
-    emb_array = np.array(emb, dtype="float32").reshape(1, -1)
+    # Appel via le client InferenceClient
+    resp = client(inputs=query)  # renvoie un dict
+    # Récupérer l'embedding
+    emb = resp['data'][0]['embedding']
+    emb_array = np.array(emb, dtype="float32").reshape(1, -1)  # 2D pour Faiss
     return emb_array
 
 def retrieve_context(query, k=4):
