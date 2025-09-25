@@ -1,3 +1,4 @@
+#### CODE COPMLET
 # WebApp.py (Chatbot RAG avec Hugging Face API)
 ###### Prérequis :
 #####  - docs.index et docs.json créés par build_index.py
@@ -69,26 +70,11 @@ submit = st.button("🚀 Envoyer")
 def embed_query(query: str):
     """
     Crée un embedding via Hugging Face et renvoie un np.array float32 2D
-    Compatible avec Faiss et les différentes structures renvoyées par l'API.
+    Compatible avec Faiss.
     """
-    resp = client.feature_extraction(model=embedding_model, inputs=query)
-
-    # Cas dict : {'embedding': [...]} ou {'embeddings': [...]}
-    if isinstance(resp, dict):
-        emb = resp.get("embedding") or resp.get("embeddings")
-        if emb is None:
-            raise ValueError("La réponse de l'API Hugging Face ne contient pas d'embedding.")
-    else:
-        emb = resp  # Cas liste ou np.array déjà renvoyé
-
-    emb_array = np.array(emb, dtype="float32")
-
-    # S'assurer que c'est 2D pour Faiss
-    if emb_array.ndim == 1:
-        emb_array = emb_array.reshape(1, -1)
-    elif emb_array.ndim > 2:
-        emb_array = emb_array[0]  # prendre la première séquence si 3D
-
+    resp = client.embeddings(model=embedding_model, input=query)
+    emb = resp['data'][0]['embedding']
+    emb_array = np.array(emb, dtype="float32").reshape(1, -1)  # 2D pour Faiss
     return emb_array
 
 def retrieve_context(query, k=4):
@@ -140,6 +126,7 @@ if submit and question.strip():
         prompt = build_prompt(question, retrieved)
         answer = generate_answer(prompt)
 
+        # Affichage stylé de la réponse
         st.subheader("🤖 Réponse du modèle")
         st.markdown(
             f"""
