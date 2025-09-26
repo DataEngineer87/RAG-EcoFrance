@@ -1,8 +1,7 @@
-#### CODE COMPLET
-# WebApp.py (Chatbot RAG avec Hugging Face API)
+### WebApp.py (Chatbot RAG avec Hugging Face API)
 ###### Prérequis :
 #####  - docs.index et docs.json créés par build_index.py
-#  - Hugging Face API key ajoutée dans Streamlit Cloud (Secrets : HUGGINGFACE_API_KEY)
+###  - Hugging Face API key ajoutée dans Streamlit Cloud (Secrets : HUGGINGFACE_API_KEY)
 
 import streamlit as st
 import faiss
@@ -73,29 +72,4 @@ def embed_query(query: str):
     Compatible avec Faiss.
     """
     resp = client.feature_extraction(model=embedding_model, inputs=query)
-    emb_array = np.array(resp, dtype="float32").reshape(1, -1)  # 2D pour Faiss
-    return emb_array
-
-def retrieve_context(query, k=4):
-    qv = embed_query(query)
-    D, I = index.search(qv, k=k)
-    results = []
-    for dist, idx in zip(D[0], I[0]):
-        text = docs[idx]
-        results.append({"id": int(idx), "distance": float(dist), "text": text})
-    return results
-
-def build_prompt(question, retrieved):
-    system = "Tu es un assistant expert en économie française. Réponds en français, cite les sections utilisées si utile."
-    context = "\n\n---\n".join(
-        [f"[chunk id={r['id']} | dist={r['distance']:.4f}]\n{r['text']}" for r in retrieved]
-    )
-    prompt = f"""{system}
-
-Contexte récupéré (extraits pertinents) :
-{context}
-
-Question : {question}
-
-Réponds de manière claire et concise en t'appuyant sur le contexte. 
-Si l'information n'est pas dans le contexte, dis-le et propose comment
+    emb_array_
