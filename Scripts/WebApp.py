@@ -72,8 +72,8 @@ def embed_query(query: str):
     Compatible avec Faiss.
     """
     try:
-        # ✅ Version compatible HF Hub >=0.26
-        resp = client.feature_extraction(embedding_model, query)  # texte en argument positionnel
+        # Texte passé en argument positionnel unique, modèle défini via keyword
+        resp = client.feature_extraction(model=embedding_model, query=query)
         emb_array = np.array(resp, dtype="float32").reshape(1, -1)
         return emb_array
     except Exception as e:
