@@ -1,7 +1,4 @@
-### WebApp.py (Chatbot RAG avec Hugging Face API)
-###### Prérequis :
-#####  - docs.index et docs.json créés par build_index.py
-###  - Hugging Face API key ajoutée dans Streamlit Cloud (Secrets : HUGGINGFACE_API_KEY)
+###  WebApp.py (Chatbot RAG avec Hugging Face API)
 
 import streamlit as st
 import faiss
@@ -72,4 +69,59 @@ def embed_query(query: str):
     Compatible avec Faiss.
     """
     resp = client.feature_extraction(model=embedding_model, inputs=query)
-    emb_array_
+    emb_array = np.array(resp, dtype="float32").reshape(1, -1)
+    return emb_array
+
+def retrieve_context(query, k=4):
+    qv = embed_query(query)
+    D, I = index.search(qv, k=k)
+    results = []
+    for dist, idx in zip(D[0], I[0]):
+        text = docs[idx]
+        results.append({"id": int(idx), "distance": float(dist), "text": text})
+    return results
+
+def build_prompt(question, retrieved):
+    system = "Tu es un assistant expert en économie française. Réponds en français, cite les sections utilisées si utile."
+    context = "\n\n---\n".join(
+        [f"[chunk id={r['id']} | dist={r['distance']:.4f}]\n{r['text']}" for r in retrieved]
+    )
+    prompt = f"""{system}
+
+Contexte récupéré (extraits pertinents) :
+{context}
+
+Question : {question}
+
+Réponds de manière claire et concise en t'appuyant sur le contexte.
+Si l'information n'est pas dans le contexte, dis-le et propose comment trouver la réponse.
+"""
+    return prompt
+
+# === TRAITEMENT ===
+if submit and question.strip():
+    with st.spinner("🔎 Recherche dans l'index et génération de la réponse..."):
+        # Récupérer le contexte via Faiss
+        retrieved = retrieve_context(question, k=k)
+
+        # Afficher le contexte utilisé
+        st.subheader("📚 Contexte utilisé")
+        for r in retrieved:
+            st.markdown(f"[chunk id={r['id']} | dist={r['distance']:.4f}]\n{r['text']}")
+
+        # Construire le prompt
+        prompt = build_prompt(question, retrieved)
+
+        # Générer la réponse via le modèle LLM Hugging Face
+        llm_resp = client.text_generation(
+            model=llm_model,
+            inputs=prompt,
+            max_new_tokens=512
+        )
+
+        # Extraire le texte de la réponse
+        answer = llm_resp[0]['generated_text']
+
+        # Afficher la réponse
+        st.subheader("💡 Réponse générée")
+        st.write(answer)
