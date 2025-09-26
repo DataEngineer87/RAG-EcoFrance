@@ -1,48 +1,117 @@
+# WebApp.py (Chatbot RAG avec Hugging Face API)
+###### Prérequis :
+#####  - docs.index et docs.json créés par build_index.py
+#  - Hugging Face API key ajoutée dans Streamlit Cloud (Secrets : HUGGINGFACE_API_KEY)
+
 import streamlit as st
 import faiss
 import numpy as np
 import json
+import os
 from huggingface_hub import InferenceClient
 
-# --- Configuration ---
+# === CONFIG ===
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+index_file = os.path.join(BASE_DIR, "docs.index")
+docs_file = os.path.join(BASE_DIR, "docs.json")
+
+# Modèles Hugging Face
 embedding_model = "sentence-transformers/all-MiniLM-L6-v2"
-client = InferenceClient(token="TON_HUGGINGFACE_TOKEN")  # Remplace par ton token HF
+llm_model = "mistralai/Mistral-7B-Instruct-v0.2"
 
-# --- Charger l’index FAISS et les documents ---
-index = faiss.read_index("Scripts/docs.index")  # Attention au chemin correct
+k = 4
 
-# Charger JSON correctement
-with open("Scripts/docs.json", "r", encoding="utf-8") as f:
-    docs = json.load(f)
+# === Initialisation Hugging Face API ===
+hf_token = os.environ.get("HUGGINGFACE_API_KEY")
+if not hf_token:
+    st.error("❌ Clé Hugging Face API manquante. Ajoutez-la dans les Secrets de Streamlit Cloud.")
+    st.stop()
 
-# --- Fonctions ---
+client = InferenceClient(token=hf_token)
+
+# === Charger index et documents ===
+@st.cache_resource
+def load_index_and_docs():
+    if not os.path.exists(index_file):
+        st.error(f"❌ Fichier introuvable : {index_file}")
+        st.stop()
+    if not os.path.exists(docs_file):
+        st.error(f"❌ Fichier introuvable : {docs_file}")
+        st.stop()
+
+    index = faiss.read_index(index_file)
+    with open(docs_file, "r", encoding="utf-8") as f:
+        docs = json.load(f)
+    return index, docs
+
+index, docs = load_index_and_docs()
+
+# === UI PRINCIPALE ===
+st.set_page_config(page_title="Chatbot RAG", page_icon="🤖", layout="centered")
+
+st.markdown(
+    "<h3 style='text-align: center;'>🤖 CHATBOT RAG - INFORMATION SUR L'ÉCONOMIE FRANÇAISE</h3>",
+    unsafe_allow_html=True
+)
+st.markdown(
+    "<h4 style='text-align: center;'>Que souhaitez-vous savoir sur l'économie française ?</h4>",
+    unsafe_allow_html=True
+)
+st.divider()
+
+question = st.text_input(
+    "💬 Entrez votre question :", 
+    placeholder="Ex: Quels sont les facteurs influençant le chômage ?"
+)
+submit = st.button("🚀 Envoyer")
+
+# === FONCTIONS ===
 def embed_query(query: str):
     """
-    Crée un embedding via Hugging Face Inference API (feature_extraction)
+    Crée un embedding via Hugging Face Inference API (feature_extraction) et renvoie un np.array float32 2D.
     Compatible avec Faiss.
     """
     resp = client.feature_extraction(model=embedding_model, inputs=query)
-    emb_array = np.array(resp, dtype="float32").reshape(1, -1)
+    emb_array = np.array(resp, dtype="float32").reshape(1, -1)  # 2D pour Faiss
     return emb_array
 
 def retrieve_context(query, k=4):
-    """
-    Récupère les k documents les plus proches via Faiss.
-    """
     qv = embed_query(query)
     D, I = index.search(qv, k=k)
-    results = [docs[idx] for idx in I[0]]
+    results = []
+    for dist, idx in zip(D[0], I[0]):
+        text = docs[idx]
+        results.append({"id": int(idx), "distance": float(dist), "text": text})
     return results
 
-# --- Streamlit App ---
-st.title("RAG EcoFrance")
-question = st.text_input("Posez votre question :")
-submit = st.button("Envoyer")
-k = 4  # Nombre de documents à récupérer
+def build_prompt(question, retrieved):
+    system = "Tu es un assistant expert en économie française. Réponds en français, cite les sections utilisées si utile."
+    context = "\n\n---\n".join(
+        [f"[chunk id={r['id']} | dist={r['distance']:.4f}]\n{r['text']}" for r in retrieved]
+    )
+    prompt = (
+        f"{system}\n\n"
+        "Contexte récupéré (extraits pertinents) :\n"
+        f"{context}\n\n"
+        f"Question : {question}\n\n"
+        "Réponds de manière claire et concise en t'appuyant sur le contexte. "
+        "Si l'information n'est pas dans le contexte, dis-le et propose comment l'obtenir."
+    )
+    return prompt
 
+# === LOGIQUE CHAT ===
 if submit and question.strip():
     with st.spinner("🔎 Recherche dans l'index et génération de la réponse..."):
         retrieved = retrieve_context(question, k=k)
         st.subheader("📚 Contexte utilisé")
-        for doc in retrieved:
-            st.write(doc)
+        for r in retrieved:
+            st.markdown(f"- [chunk id={r['id']} | dist={r['distance']:.4f}] {r['text'][:200]}...")
+
+        prompt = build_prompt(question, retrieved)
+        st.subheader("💡 Prompt envoyé au modèle")
+        st.text_area("Prompt", prompt, height=300)
+
+        # Ici, tu peux ajouter l'appel au modèle LLM (par ex. via Hugging Face Inference API)
+        # réponse = client.text_generation(model=llm_model, inputs=prompt)
+        # st.subheader("🤖 Réponse")
+        # st.write(réponse)
