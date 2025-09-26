@@ -1,7 +1,7 @@
-# WebApp.py (Chatbot RAG avec Hugging Face API)
+#### WebApp.py (Chatbot RAG avec Hugging Face API)
 ###### Prérequis :
 #####  - docs.index et docs.json créés par build_index.py
-#  - Hugging Face API key ajoutée dans Streamlit Cloud (Secrets : HUGGINGFACE_API_KEY)
+####  - Hugging Face API key ajoutée dans Streamlit Cloud (Secrets : HUGGINGFACE_API_KEY)
 
 import streamlit as st
 import faiss
@@ -71,8 +71,8 @@ def embed_query(query: str):
     Crée un embedding via Hugging Face Inference API et renvoie un np.array float32 2D.
     Compatible avec Faiss.
     """
-    # ✅ Compatible huggingface_hub >=0.26
-    resp = client.feature_extraction(embedding_model, query)
+    # ✅ Correction pour huggingface_hub >=0.26 : model et inputs en kwargs
+    resp = client.feature_extraction(model=embedding_model, inputs=query)
     emb_array = np.array(resp, dtype="float32").reshape(1, -1)  # 2D pour Faiss
     return emb_array
 
@@ -112,7 +112,7 @@ if submit and question.strip():
         st.subheader("💡 Prompt envoyé au modèle")
         st.text_area("Prompt", prompt, height=300)
 
-        # === Exemple d'appel LLM Hugging Face ===
+        # Ici, tu peux ajouter l'appel au modèle LLM (par ex. via Hugging Face Inference API)
         # réponse = client.text_generation(model=llm_model, inputs=prompt)
         # st.subheader("🤖 Réponse")
         # st.write(réponse)
