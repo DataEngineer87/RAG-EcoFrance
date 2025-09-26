@@ -68,14 +68,11 @@ submit = st.button("🚀 Envoyer")
 # === FONCTIONS ===
 def embed_query(query: str):
     """
-    Crée un embedding via Hugging Face Inference API (feature_extraction) et renvoie un np.array float32 2D.
+    Crée un embedding via Hugging Face Inference API et renvoie un np.array float32 2D.
     Compatible avec Faiss.
     """
-    # ✅ Utilisation de client.post() pour HF Hub >=0.26
-    resp = client.post(
-        f"https://api-inference.huggingface.co/pipeline/feature-extraction/{embedding_model}",
-        json={"inputs": query}
-    )
+    # ✅ Compatible huggingface_hub >=0.26
+    resp = client.feature_extraction(embedding_model, query)
     emb_array = np.array(resp, dtype="float32").reshape(1, -1)  # 2D pour Faiss
     return emb_array
 
@@ -115,10 +112,7 @@ if submit and question.strip():
         st.subheader("💡 Prompt envoyé au modèle")
         st.text_area("Prompt", prompt, height=300)
 
-        # Ici, tu peux ajouter l'appel au modèle LLM (par ex. via Hugging Face Inference API)
-        # réponse = client.post(
-        #     f"https://api-inference.huggingface.co/pipeline/text-generation/{llm_model}",
-        #     json={"inputs": prompt}
-        # )
+        # === Exemple d'appel LLM Hugging Face ===
+        # réponse = client.text_generation(model=llm_model, inputs=prompt)
         # st.subheader("🤖 Réponse")
         # st.write(réponse)
