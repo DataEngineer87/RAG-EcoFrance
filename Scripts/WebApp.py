@@ -72,7 +72,8 @@ def embed_query(query: str):
     Compatible avec Faiss.
     """
     try:
-        resp = client.feature_extraction(model=embedding_model, query=query)
+        # ✅ Version compatible HF Hub >=0.26
+        resp = client.feature_extraction(embedding_model, query)  # texte en argument positionnel
         emb_array = np.array(resp, dtype="float32").reshape(1, -1)
         return emb_array
     except Exception as e:
@@ -115,10 +116,7 @@ if submit and question.strip():
         st.subheader("💡 Prompt envoyé au modèle")
         st.text_area("Prompt", prompt, height=300)
 
-        # Exemple pour générer la réponse via LLM
-        # try:
-        #     réponse = client.text_generation(model=llm_model, inputs=prompt)
-        #     st.subheader("🤖 Réponse")
-        #     st.write(réponse)
-        # except Exception as e:
-        #     st.error(f"❌ Erreur lors de la génération de la réponse LLM : {e}")
+        # Ici, tu peux ajouter l'appel au modèle LLM (par ex. via Hugging Face Inference API)
+        # réponse = client.text_generation(model=llm_model, inputs=prompt)
+        # st.subheader("🤖 Réponse")
+        # st.write(réponse)
