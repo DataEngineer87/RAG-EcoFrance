@@ -72,10 +72,8 @@ def embed_query(query: str):
     Compatible avec Faiss.
     """
     try:
-        # Crée un client spécifique au modèle d'embedding
-        embed_model_client = client.model(embedding_model)
-        # Appel avec le texte en argument positionnel
-        resp = embed_model_client(query)
+        # ✅ Appel correct pour huggingface_hub >=0.26
+        resp = client.feature_extraction(model=embedding_model, inputs=query)
         emb_array = np.array(resp, dtype="float32").reshape(1, -1)
         return emb_array
     except Exception as e:
@@ -118,7 +116,7 @@ if submit and question.strip():
         st.subheader("💡 Prompt envoyé au modèle")
         st.text_area("Prompt", prompt, height=300)
 
-        # Ici, tu peux ajouter l'appel au modèle LLM (par ex. via Hugging Face Inference API)
-        # réponse = client.model(llm_model)(prompt)
+        # Exemple d'appel LLM via Hugging Face (à décommenter si nécessaire)
+        # réponse = client.text_generation(model=llm_model, inputs=prompt)
         # st.subheader("🤖 Réponse")
         # st.write(réponse)
