@@ -1,6 +1,7 @@
 import streamlit as st
 import faiss
 import numpy as np
+import json
 from huggingface_hub import InferenceClient
 
 # --- Configuration ---
@@ -9,7 +10,10 @@ client = InferenceClient(token="TON_HUGGINGFACE_TOKEN")  # Remplace par ton toke
 
 # --- Charger l’index FAISS et les documents ---
 index = faiss.read_index("Scripts/docs.index")  # Attention au chemin correct
-docs = np.load("Scripts/docs.json", allow_pickle=True)
+
+# Charger JSON correctement
+with open("Scripts/docs.json", "r", encoding="utf-8") as f:
+    docs = json.load(f)
 
 # --- Fonctions ---
 def embed_query(query: str):
@@ -17,7 +21,7 @@ def embed_query(query: str):
     Crée un embedding via Hugging Face Inference API (feature_extraction)
     Compatible avec Faiss.
     """
-    resp = client.feature_extraction(model=embedding_model, query=query)
+    resp = client.feature_extraction(model=embedding_model, inputs=query)
     emb_array = np.array(resp, dtype="float32").reshape(1, -1)
     return emb_array
 
@@ -27,9 +31,7 @@ def retrieve_context(query, k=4):
     """
     qv = embed_query(query)
     D, I = index.search(qv, k=k)
-    results = []
-    for idx in I[0]:
-        results.append(docs[idx])
+    results = [docs[idx] for idx in I[0]]
     return results
 
 # --- Streamlit App ---
