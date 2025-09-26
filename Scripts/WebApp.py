@@ -1,7 +1,7 @@
 #### WebApp.py (Chatbot RAG avec Hugging Face API)
 ###### Prérequis :
 #####  - docs.index et docs.json créés par build_index.py
-####  - Hugging Face API key ajoutée dans Streamlit Cloud (Secrets : HUGGINGFACE_API_KEY)
+#####  - Hugging Face API key ajoutée dans Streamlit Cloud (Secrets : HUGGINGFACE_API_KEY)
 
 import streamlit as st
 import faiss
@@ -27,7 +27,8 @@ if not hf_token:
     st.error("❌ Clé Hugging Face API manquante. Ajoutez-la dans les Secrets de Streamlit Cloud.")
     st.stop()
 
-client = InferenceClient(token=hf_token)
+# ✅ Initialiser le client avec le modèle d'embedding
+client = InferenceClient(model=embedding_model, token=hf_token)
 
 # === Charger index et documents ===
 @st.cache_resource
@@ -71,8 +72,8 @@ def embed_query(query: str):
     Crée un embedding via Hugging Face Inference API et renvoie un np.array float32 2D.
     Compatible avec Faiss.
     """
-    # ✅ Correction pour huggingface_hub >=0.26 : model et inputs en kwargs
-    resp = client.feature_extraction(model=embedding_model, inputs=query)
+    # ✅ Avec huggingface_hub >=0.26 : le modèle est déjà défini dans le client
+    resp = client.feature_extraction(query)  # on passe juste le texte
     emb_array = np.array(resp, dtype="float32").reshape(1, -1)  # 2D pour Faiss
     return emb_array
 
@@ -113,6 +114,6 @@ if submit and question.strip():
         st.text_area("Prompt", prompt, height=300)
 
         # Ici, tu peux ajouter l'appel au modèle LLM (par ex. via Hugging Face Inference API)
-        # réponse = client.text_generation(model=llm_model, inputs=prompt)
+        # réponse = InferenceClient(model=llm_model, token=hf_token).text_generation(prompt)
         # st.subheader("🤖 Réponse")
         # st.write(réponse)
