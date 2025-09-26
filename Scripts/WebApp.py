@@ -1,6 +1,6 @@
 # WebApp.py (Chatbot RAG avec Hugging Face API)
 # Prérequis :
-# - Scripts/docs.index et Scripts/docs.json créés par build_index.py
+# - docs.index et docs.json créés par build_index.py
 # - Hugging Face API key ajoutée dans Streamlit Cloud (Secrets : HUGGINGFACE_API_KEY)
 
 import streamlit as st
@@ -68,12 +68,11 @@ submit = st.button("🚀 Envoyer")
 # === FONCTIONS ===
 def embed_query(query: str):
     """
-    Crée un embedding via Hugging Face Inference API (feature_extraction).
+    Crée un embedding via Hugging Face Inference API (text_embeddings).
     Compatible avec Faiss.
     """
-    # ✅ Correction : utilisation de 'text' au lieu de 'inputs'
-    resp = client.feature_extraction(model=embedding_model, text=query)
-    emb_array = np.array(resp, dtype="float32").reshape(1, -1)  # 2D pour Faiss
+    resp = client.text_embeddings(model=embedding_model, input=query)
+    emb_array = np.array(resp['embedding'], dtype="float32").reshape(1, -1)
     return emb_array
 
 def retrieve_context(query, k=4):
@@ -98,13 +97,13 @@ Contexte récupéré (extraits pertinents) :
 Question : {question}
 
 Réponds de manière claire et concise en t'appuyant sur le contexte. 
-Si l'information n'est pas dans le contexte, dis-le et propose comment l'obtenir.
+Si l'information n'est pas dans le contexte, dis-le et propose comment trouver la réponse.
 """
     return prompt
 
 def generate_answer(prompt):
-    resp = client.text_generation(model=llm_model, inputs=prompt, max_new_tokens=512)
-    return resp[0]['generated_text'] if resp else "❌ Pas de réponse générée."
+    response = client.text_generation(model=llm_model, inputs=prompt, parameters={"max_new_tokens": 512})
+    return response.generated_text if hasattr(response, "generated_text") else response[0]['generated_text']
 
 # === LOGIQUE PRINCIPALE ===
 if submit and question.strip():
@@ -115,10 +114,13 @@ if submit and question.strip():
         # Afficher le contexte utilisé
         st.subheader("📚 Contexte utilisé")
         for r in retrieved:
-            st.markdown(f"[chunk id={r['id']} | dist={r['distance']:.4f}]\n{r['text']}")
-
-        # Générer la réponse
+            st.markdown(f"**[chunk id={r['id']} | dist={r['distance']:.4f}]**  \n{r['text']}")
+        
+        # Construire le prompt pour le LLM
         prompt = build_prompt(question, retrieved)
+        
+        # Générer la réponse
         answer = generate_answer(prompt)
-        st.subheader("💡 Réponse générée")
+        
+        st.subheader("🤖 Réponse du Chatbot")
         st.write(answer)
