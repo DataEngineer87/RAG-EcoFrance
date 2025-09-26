@@ -28,7 +28,6 @@ if not hf_token:
     st.stop()
 
 client = InferenceClient(token=hf_token)
-embed_model_client = client.model(embedding_model)  # <- Client spécifique au modèle d'embeddings
 
 # === Charger index et documents ===
 @st.cache_resource
@@ -73,8 +72,8 @@ def embed_query(query: str):
     Compatible avec Faiss.
     """
     try:
-        resp = embed_model_client(query)  # <- appel direct du modèle
-        emb_array = np.array(resp, dtype="float32").reshape(1, -1)  # 2D pour Faiss
+        resp = client.feature_extraction(model=embedding_model, query=query)
+        emb_array = np.array(resp, dtype="float32").reshape(1, -1)
         return emb_array
     except Exception as e:
         st.error(f"❌ Erreur lors de la génération de l'embedding : {e}")
@@ -116,7 +115,10 @@ if submit and question.strip():
         st.subheader("💡 Prompt envoyé au modèle")
         st.text_area("Prompt", prompt, height=300)
 
-        # Ici, tu peux ajouter l'appel au modèle LLM (par ex. via Hugging Face Inference API)
-        # réponse = client.text_generation(model=llm_model, inputs=prompt)
-        # st.subheader("🤖 Réponse")
-        # st.write(réponse)
+        # Exemple pour générer la réponse via LLM
+        # try:
+        #     réponse = client.text_generation(model=llm_model, inputs=prompt)
+        #     st.subheader("🤖 Réponse")
+        #     st.write(réponse)
+        # except Exception as e:
+        #     st.error(f"❌ Erreur lors de la génération de la réponse LLM : {e}")
