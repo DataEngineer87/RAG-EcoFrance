@@ -4,7 +4,7 @@ numpy==2.3.3
 ollama==0.5.4
 streamlit==1.49.1
 python-dotenv
-
+sentence-transformers==2.2.2
 
 
 
