@@ -16,8 +16,8 @@ client = InferenceClient(token=HF_API_KEY)
 embedding_model = "sentence-transformers/all-MiniLM-L6-v2"
 
 # Charger l’index FAISS (assume que index.faiss + docs.npy existent)
-index = faiss.read_index("Data/index.faiss")
-docs = np.load("Data/docs.npy", allow_pickle=True)
+index = faiss.read_index("Scripts/docs.index")
+docs = np.load("Scripts/docs.npy", allow_pickle=True)
 
 # --- Fonctions ---
 
