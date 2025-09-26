@@ -1,33 +1,32 @@
-#### WebApp.py (Chatbot RAG avec Hugging Face API)
+#### WebApp.py (Chatbot RAG avec embeddings locaux)
 ###### Prérequis :
-#####  - docs.index et docs.json créés par build_index.py
-####  - Hugging Face API key ajoutée dans Streamlit Cloud (Secrets : HUGGINGFACE_API_KEY)
+# - docs.index et docs.json créés par build_index.py
+# - Installer la librairie : pip install sentence-transformers faiss-cpu streamlit numpy
 
 import streamlit as st
 import faiss
 import numpy as np
 import json
 import os
-from huggingface_hub import InferenceClient
+from sentence_transformers import SentenceTransformer
 
 # === CONFIG ===
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 index_file = os.path.join(BASE_DIR, "docs.index")
 docs_file = os.path.join(BASE_DIR, "docs.json")
 
-# Modèles Hugging Face
-embedding_model = "sentence-transformers/all-MiniLM-L12-v2"
+# Modèles
+embedding_model_name = "sentence-transformers/all-MiniLM-L12-v2"
 llm_model = "mistralai/Mistral-7B-Instruct-v0.2"
 
 k = 4
 
-# === Initialisation Hugging Face API ===
-hf_token = os.environ.get("HUGGINGFACE_API_KEY")
-if not hf_token:
-    st.error("❌ Clé Hugging Face API manquante. Ajoutez-la dans les Secrets de Streamlit Cloud.")
-    st.stop()
+# === Initialisation du modèle d'embedding local ===
+@st.cache_resource
+def load_embedder():
+    return SentenceTransformer(embedding_model_name)
 
-client = InferenceClient(token=hf_token)
+embedder = load_embedder()
 
 # === Charger index et documents ===
 @st.cache_resource
@@ -68,18 +67,11 @@ submit = st.button("🚀 Envoyer")
 # === FONCTIONS ===
 def embed_query(query: str):
     """
-    Crée un embedding via Hugging Face Inference API et renvoie un np.array float32 2D.
+    Crée un embedding via SentenceTransformer local et renvoie un np.array float32 2D.
     Compatible avec Faiss.
     """
-    try:
-        # Appel direct sur le client avec le modèle
-        resp = client.feature_extraction(model=embedding_model, text=query)
-        emb_array = np.array(resp, dtype="float32").reshape(1, -1)  # 2D pour Faiss
-        return emb_array
-    except Exception as e:
-        st.error(f"❌ Erreur lors de la génération de l'embedding : {e}")
-        st.stop()
-
+    emb_array = embedder.encode([query], convert_to_numpy=True)
+    return emb_array.astype('float32')
 
 def retrieve_context(query, k=4):
     qv = embed_query(query)
@@ -114,10 +106,10 @@ if submit and question.strip():
             st.markdown(f"- [chunk id={r['id']} | dist={r['distance']:.4f}] {r['text'][:200]}...")
 
         prompt = build_prompt(question, retrieved)
-        st.subheader("💡 Prompt envoyé au modèle")
+        st.subheader("💡 Prompt généré")
         st.text_area("Prompt", prompt, height=300)
 
-        # Ici, tu peux ajouter l'appel au modèle LLM (par ex. via Hugging Face Inference API)
-        # réponse = client.text_generation(model=llm_model, inputs=prompt)
+        # Ici, tu peux ajouter l'appel au modèle LLM via Hugging Face si tu le souhaites
+        # par exemple : réponse = client.model(llm_model)(prompt)
         # st.subheader("🤖 Réponse")
         # st.write(réponse)
