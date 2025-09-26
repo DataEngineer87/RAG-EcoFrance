@@ -72,13 +72,14 @@ def embed_query(query: str):
     Compatible avec Faiss.
     """
     try:
-        # ✅ Appel direct sur le client avec le modèle
-        resp = client.feature_extraction(model=embedding_model, inputs=query)
+        # Appel direct sur le client avec le modèle
+        resp = client.feature_extraction(model=embedding_model, text=query)
         emb_array = np.array(resp, dtype="float32").reshape(1, -1)  # 2D pour Faiss
         return emb_array
     except Exception as e:
         st.error(f"❌ Erreur lors de la génération de l'embedding : {e}")
         st.stop()
+
 
 def retrieve_context(query, k=4):
     qv = embed_query(query)
