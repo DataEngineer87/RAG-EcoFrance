@@ -28,6 +28,7 @@ if not hf_token:
     st.stop()
 
 client = InferenceClient(token=hf_token)
+embed_model_client = client.model(embedding_model)  # <- Client spécifique au modèle d'embeddings
 
 # === Charger index et documents ===
 @st.cache_resource
@@ -72,17 +73,12 @@ def embed_query(query: str):
     Compatible avec Faiss.
     """
     try:
-        resp = client.feature_extraction(
-            model=embedding_model,
-            task="feature-extraction",
-            inputs=query
-        )
+        resp = embed_model_client(query)  # <- appel direct du modèle
+        emb_array = np.array(resp, dtype="float32").reshape(1, -1)  # 2D pour Faiss
+        return emb_array
     except Exception as e:
         st.error(f"❌ Erreur lors de la génération de l'embedding : {e}")
         st.stop()
-    
-    emb_array = np.array(resp, dtype="float32").reshape(1, -1)
-    return emb_array
 
 def retrieve_context(query, k=4):
     qv = embed_query(query)
