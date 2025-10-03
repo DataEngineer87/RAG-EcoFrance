@@ -1,0 +1,17 @@
+# Environnements virtuels
+venv*/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Checkpoints Jupyter
+.ipynb_checkpoints
+
+# Fichiers OS
+.DS_Store
+Thumbs.db
+nano /home/sacko/Documents/RAG-EcoFrance-clean/RAG-EcoFrance-clean2/.gitignore
+clehug.env
+.ipynb_checkpoints/
+
