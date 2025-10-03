@@ -1,39 +1,33 @@
-## WebApp.py (Chatbot RAG avec Hugging Face APPLICATION)
+#### WebApp.py (Chatbot RAG avec Hugging Face API)
+###### Prérequis :
+#####  - docs.index et docs.json créés par build_index.py
+####  - Hugging Face API key ajoutée dans Streamlit Cloud (Secrets : HUGGINGFACE_API_KEY)
+
 import streamlit as st
 import faiss
 import numpy as np
 import json
 import os
-import requests
-from dotenv import load_dotenv
-
-# === CHARGER VARIABLES D'ENVIRONNEMENT ===
-# Si fichier .env local disponible
-env_path = "Scripts/clehug.env"
-if os.path.exists(env_path):
-    load_dotenv(env_path)
+from huggingface_hub import InferenceClient
 
 # === CONFIG ===
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))  # dossier du script
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 index_file = os.path.join(BASE_DIR, "docs.index")
 docs_file = os.path.join(BASE_DIR, "docs.json")
 
 # Modèles Hugging Face
-embedding_model = "sentence-transformers/all-MiniLM-L6-v2"
+embedding_model = "sentence-transformers/all-MiniLM-L12-v2"
 llm_model = "mistralai/Mistral-7B-Instruct-v0.2"
+
 k = 4
 
 # === Initialisation Hugging Face API ===
 hf_token = os.environ.get("HUGGINGFACE_API_KEY")
-
 if not hf_token:
-    st.error("❌ Clé Hugging Face API manquante. "
-             "Ajoutez-la dans le fichier .env local ou dans les Secrets de Streamlit Cloud.")
+    st.error("❌ Clé Hugging Face API manquante. Ajoutez-la dans les Secrets de Streamlit Cloud.")
     st.stop()
-else:
-    st.success("✅ Clé Hugging Face chargée correctement")
 
-HEADERS = {"Authorization": f"Bearer {hf_token}"}
+client = InferenceClient(token=hf_token)
 
 # === Charger index et documents ===
 @st.cache_resource
@@ -73,11 +67,22 @@ submit = st.button("🚀 Envoyer")
 
 # === FONCTIONS ===
 def embed_query(query: str):
-    """Créer un embedding via Hugging Face API"""
-    url = f"https://api-inference.huggingface.co/models/{embedding_model}"
-    response = requests.post(url, headers=HEADERS, json={"inputs": query})
-    response.raise_for_status()
-    return np.array(response.json(), dtype="float32").reshape(1, -1)
+    """
+    Crée un embedding via Hugging Face Inference API et renvoie un np.array float32 2D.
+    Compatible avec Faiss.
+    """
+    try:
+        resp = client.feature_extraction(
+            model=embedding_model,
+            task="feature-extraction",
+            inputs=query
+        )
+    except Exception as e:
+        st.error(f"❌ Erreur lors de la génération de l'embedding : {e}")
+        st.stop()
+    
+    emb_array = np.array(resp, dtype="float32").reshape(1, -1)
+    return emb_array
 
 def retrieve_context(query, k=4):
     qv = embed_query(query)
@@ -93,46 +98,29 @@ def build_prompt(question, retrieved):
     context = "\n\n---\n".join(
         [f"[chunk id={r['id']} | dist={r['distance']:.4f}]\n{r['text']}" for r in retrieved]
     )
-    prompt = f"""{system}
-
-Contexte récupéré (extraits pertinents) :
-{context}
-
-Question : {question}
-
-Réponds de manière claire et concise en t'appuyant sur le contexte. 
-Si l'information n'est pas dans le contexte, dis-le et propose comment l'obtenir."""
+    prompt = (
+        f"{system}\n\n"
+        "Contexte récupéré (extraits pertinents) :\n"
+        f"{context}\n\n"
+        f"Question : {question}\n\n"
+        "Réponds de manière claire et concise en t'appuyant sur le contexte. "
+        "Si l'information n'est pas dans le contexte, dis-le et propose comment l'obtenir."
+    )
     return prompt
 
-def generate_answer(prompt: str):
-    """Générer une réponse via Hugging Face API"""
-    url = f"https://api-inference.huggingface.co/models/{llm_model}"
-    payload = {"inputs": prompt, "parameters": {"max_new_tokens": 300}}
-    response = requests.post(url, headers=HEADERS, json=payload)
-    response.raise_for_status()
-    # L'API renvoie une liste avec "generated_text"
-    return response.json()[0]["generated_text"]
-
-# === CHAT ===
+# === LOGIQUE CHAT ===
 if submit and question.strip():
     with st.spinner("🔎 Recherche dans l'index et génération de la réponse..."):
         retrieved = retrieve_context(question, k=k)
-
         st.subheader("📚 Contexte utilisé")
         for r in retrieved:
-            with st.expander(f"Chunk {r['id']} (distance={r['distance']:.4f})"):
-                st.write(r['text'])
+            st.markdown(f"- [chunk id={r['id']} | dist={r['distance']:.4f}] {r['text'][:200]}...")
 
         prompt = build_prompt(question, retrieved)
-        answer = generate_answer(prompt)
+        st.subheader("💡 Prompt envoyé au modèle")
+        st.text_area("Prompt", prompt, height=300)
 
-        # Affichage stylé de la réponse
-        st.subheader("🤖 Réponse du modèle")
-        st.markdown(
-            f"""
-            <div style="border:2px solid #4CAF50; padding:15px; border-radius:10px; background-color:#f9fff9;">
-                {answer}
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
+        # Ici, tu peux ajouter l'appel au modèle LLM (par ex. via Hugging Face Inference API)
+        # réponse = client.text_generation(model=llm_model, inputs=prompt)
+        # st.subheader("🤖 Réponse")
+        # st.write(réponse)
