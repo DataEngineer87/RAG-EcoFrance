@@ -1,33 +1,20 @@
-#### WebApp.py (Chatbot RAG avec Hugging Face API)
-###### Prérequis :
-#####  - docs.index et docs.json créés par build_index.py
-####  - Hugging Face API key ajoutée dans Streamlit Cloud (Secrets : HUGGINGFACE_API_KEY)
+# app.py (Chatbot RAG avec UI améliorée)
+# Prérequis : docs.index et docs.json créés par build_index.py, ollama serve en marche, modèle téléchargé.
 
 import streamlit as st
 import faiss
 import numpy as np
 import json
+import ollama
 import os
-from huggingface_hub import InferenceClient
 
 # === CONFIG ===
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))  # dossier du script
 index_file = os.path.join(BASE_DIR, "docs.index")
 docs_file = os.path.join(BASE_DIR, "docs.json")
-
-# Modèles Hugging Face
-embedding_model = "sentence-transformers/all-MiniLM-L12-v2"
-llm_model = "mistralai/Mistral-7B-Instruct-v0.2"
-
+model = "mistral"
 k = 4
-
-# === Initialisation Hugging Face API ===
-hf_token = os.environ.get("HUGGINGFACE_API_KEY")
-if not hf_token:
-    st.error("❌ Clé Hugging Face API manquante. Ajoutez-la dans les Secrets de Streamlit Cloud.")
-    st.stop()
-
-client = InferenceClient(token=hf_token)
+score_threshold = None
 
 # === Charger index et documents ===
 @st.cache_resource
@@ -59,33 +46,14 @@ st.markdown(
 )
 st.divider()
 
-question = st.text_input(
-    "💬 Entrez votre question :", 
-    placeholder="Ex: Quels sont les facteurs influençant le chômage ?"
-)
+question = st.text_input("💬 Entrez votre question :", placeholder="Ex: Quels sont les facteurs influençant le chômage ?")
 submit = st.button("🚀 Envoyer")
 
 # === FONCTIONS ===
-def embed_query(query: str):
-    """
-    Crée un embedding via Hugging Face Inference API et renvoie un np.array float32 2D.
-    Compatible avec Faiss.
-    """
-    try:
-        resp = client.feature_extraction(
-            model=embedding_model,
-            task="feature-extraction",
-            inputs=query
-        )
-    except Exception as e:
-        st.error(f"❌ Erreur lors de la génération de l'embedding : {e}")
-        st.stop()
-    
-    emb_array = np.array(resp, dtype="float32").reshape(1, -1)
-    return emb_array
-
 def retrieve_context(query, k=4):
-    qv = embed_query(query)
+    q_emb_resp = ollama.embed(model=model, input=query)
+    q_emb = q_emb_resp.get("embeddings", [q_emb_resp.get("embedding")])[0]
+    qv = np.array([q_emb], dtype="float32")
     D, I = index.search(qv, k=k)
     results = []
     for dist, idx in zip(D[0], I[0]):
@@ -98,29 +66,46 @@ def build_prompt(question, retrieved):
     context = "\n\n---\n".join(
         [f"[chunk id={r['id']} | dist={r['distance']:.4f}]\n{r['text']}" for r in retrieved]
     )
-    prompt = (
-        f"{system}\n\n"
-        "Contexte récupéré (extraits pertinents) :\n"
-        f"{context}\n\n"
-        f"Question : {question}\n\n"
-        "Réponds de manière claire et concise en t'appuyant sur le contexte. "
-        "Si l'information n'est pas dans le contexte, dis-le et propose comment l'obtenir."
-    )
+    prompt = f"""{system}
+
+Contexte récupéré (extraits pertinents) :
+{context}
+
+Question : {question}
+
+Réponds de manière claire et concise en t'appuyant sur le contexte. 
+Si l'information n'est pas dans le contexte, dis-le et propose comment l'obtenir."""
     return prompt
 
-# === LOGIQUE CHAT ===
+# === CHAT ===
 if submit and question.strip():
     with st.spinner("🔎 Recherche dans l'index et génération de la réponse..."):
         retrieved = retrieve_context(question, k=k)
+
         st.subheader("📚 Contexte utilisé")
         for r in retrieved:
-            st.markdown(f"- [chunk id={r['id']} | dist={r['distance']:.4f}] {r['text'][:200]}...")
+            with st.expander(f"Chunk {r['id']} (distance={r['distance']:.4f})"):
+                st.write(r['text'])
 
         prompt = build_prompt(question, retrieved)
-        st.subheader("💡 Prompt envoyé au modèle")
-        st.text_area("Prompt", prompt, height=300)
 
-        # Ici, tu peux ajouter l'appel au modèle LLM (par ex. via Hugging Face Inference API)
-        # réponse = client.text_generation(model=llm_model, inputs=prompt)
-        # st.subheader("🤖 Réponse")
-        # st.write(réponse)
+        response = ollama.chat(
+            model=model,
+            messages=[
+                {"role": "system", "content": "Tu es un assistant."},
+                {"role": "user", "content": prompt},
+            ],
+        )
+
+        answer = response.get("message", {}).get("content", "")
+
+        # Affichage stylé de la réponse
+        st.subheader("🤖 Réponse du modèle")
+        st.markdown(
+            f"""
+            <div style="border:2px solid #4CAF50; padding:15px; border-radius:10px; background-color:#f9fff9;">
+                {answer}
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
