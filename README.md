@@ -37,3 +37,13 @@ Organigramme TD
    - K --> L[Interface Streamlit]
 ### Schéma
 ![Pipeline RAG](images/Pipeline_rag_chatbot_dark.png)
+
+## Installation et exécution
+### Prérequis :
+- Ollama installé et lancé
+- Téléchargement du modèle :
+  
+---
+ollama pull mistral
+ollama serve
+---
