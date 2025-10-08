@@ -54,7 +54,8 @@ pip install streamlit faiss-cpu pypdf ollama
 ### Construction de l’index
 
 - Extrait le PDF, découpe en chunks, génère embeddings et sauvegarde :
-  python build_index.py
+  
+python build_index.py
   
 Cela crée :
 
