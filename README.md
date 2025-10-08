@@ -44,4 +44,10 @@ Organigramme TD
 - Téléchargement du modèle :
 - **ollama pull mistral**
 - **ollama serve**
+- Python 3.11 recommandé
+
+### Dépendances :
+---
+pip install streamlit faiss-cpu pypdf ollama
+---
 
