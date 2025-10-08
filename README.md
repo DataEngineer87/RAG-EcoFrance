@@ -5,3 +5,6 @@
 ![FAISS](https://img.shields.io/badge/Vector%20Search-FAISS-0055A4?logo=apache&logoColor=white)
 ![Python](https://img.shields.io/badge/Python-3.10+-3776AB?logo=python&logoColor=white)
 ![License](https://img.shields.io/badge/License-MIT-green)
+
+# Schéma pipeline
+![Pipeline RAG](images/pipeline_rag_chatbot.png)
