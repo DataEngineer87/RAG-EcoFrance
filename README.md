@@ -25,15 +25,15 @@ Grâce à une architecture RAG (Retrieval-Augmented Generation), le chatbot comb
 
 ## Architecture du pipeline
 Organigramme TD
-    A[PDF Rapport] --> B[Extraction Texte]
-    B --> C[Découpage en Chunks]
-    C --> D[Embeddings (Ollama)]
-    D --> E[FAISS Index]
-    F[Question Utilisateur] --> G[Embedding Question]
-    G --> H[Recherche FAISS]
-    H --> I[Contexte Pertinent]
-    I --> J[LLM (Mistral via Ollama)]
-    J --> K[Réponse Contextualisée]
-    K --> L[Interface Streamlit]
+   - A[PDF Rapport] --> B[Extraction Texte]
+   - B --> C[Découpage en Chunks]
+   -  C --> D[Embeddings (Ollama)]
+   -  D --> E[FAISS Index]
+   -  F[Question Utilisateur] --> G[Embedding Question]
+   -  G --> H[Recherche FAISS]
+   - H --> I[Contexte Pertinent]
+   - I --> J[LLM (Mistral via Ollama)]
+   - J --> K[Réponse Contextualisée]
+   - K --> L[Interface Streamlit]
     
 ![Pipeline RAG](images/Pipeline_rag_chatbot_dark.png)
