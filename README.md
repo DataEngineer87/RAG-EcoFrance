@@ -35,5 +35,5 @@ Organigramme TD
    - I --> J[LLM (Mistral via Ollama)]
    - J --> K[Réponse Contextualisée]
    - K --> L[Interface Streamlit]
-    ### Schéma
+### Schéma
 ![Pipeline RAG](images/Pipeline_rag_chatbot_dark.png)
