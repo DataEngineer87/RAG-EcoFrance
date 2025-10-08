@@ -7,4 +7,4 @@
 ![License](https://img.shields.io/badge/License-MIT-green)
 
 # Schéma pipeline
-![Pipeline RAG](images/pipeline_rag_chatbot.png)
+![Pipeline RAG](images/Pipeline_rag_chatbot.png)
