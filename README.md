@@ -51,3 +51,12 @@ Organigramme TD
 pip install streamlit faiss-cpu pypdf ollama
 ---
 
+### Construction de l’index
+
+- Extrait le PDF, découpe en chunks, génère embeddings et sauvegarde :
+  python build_index.py
+  
+Cela crée :
+
+- docs.index : index FAISS
+- docs.json : chunks de texte associés
