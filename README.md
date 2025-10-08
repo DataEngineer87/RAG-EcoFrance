@@ -43,5 +43,10 @@ Organigramme TD
 - Ollama installé et lancé
 - Téléchargement du modèle :
 
+----
 ollama pull mistral
+----
+
+----
 ollama serve
+----
