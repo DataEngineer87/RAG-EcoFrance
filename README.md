@@ -14,5 +14,5 @@ Grâce à une architecture RAG (Retrieval-Augmented Generation), le chatbot comb
 - Ollama (Mistral) → Modèle de langage open-source pour embeddings & génération
 - FAISS → Recherche vectorielle rapide et efficace
 - Streamlit → Interface web interactive et simple à utiliser
-# Schéma pipeline
+## Schéma pipeline
 ![Pipeline RAG](images/Pipeline_rag_chatbot_dark.png)
