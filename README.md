@@ -71,4 +71,14 @@ Cela crée :
 
 Pose tes questions sur le PDF (ex : «Quelle est la place de la France dans l'économie européenne ?»).
 
+### Améliorations possibles
 
+- Support multi-PDFs
+
+- Indexation avec FAISS-IVF/HNSW pour grands corpus
+
+- Déploiement cloud (Streamlit Cloud, Hugging Face Spaces, Zure, ...)
+
+- Vérification des requêtes SQL pour sécurité
+
+- Ajout des métadonnées (numéro de page, position) pour citation précise
