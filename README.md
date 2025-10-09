@@ -70,3 +70,5 @@ Cela crée :
 - 👉 Ouvre ton navigateur à http://localhost:8501
 
 Pose tes questions sur le PDF (ex : «Quelle est la place de la France dans l'économie européenne ?»).
+
+
