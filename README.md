@@ -82,3 +82,7 @@ Pose tes questions sur le PDF (ex : «Quelle est la place de la France dans l'é
 - Vérification des requêtes SQL pour sécurité
 
 - Ajout des métadonnées (numéro de page, position) pour citation précise
+
+### 👤 Auteur
+- Projet réalisé par Alseny
+- Objectif : démonstration d’un pipeline RAG appliqué à un rapport d’économie française.
