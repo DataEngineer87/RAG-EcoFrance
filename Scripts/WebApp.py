@@ -1,5 +1,5 @@
 # app.py (Chatbot RAG avec UI améliorée)
-# Prérequis : docs.index et docs.json créés par build_index.py, ollama serve en marche, modèle téléchargé.
+# Prérequis : docs.index et docs.json créés par ProjetRAG.ipynb, ollama serve en marche, modèle téléchargé.
 
 import streamlit as st
 import faiss
