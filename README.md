@@ -3,8 +3,86 @@
 ![Streamlit](https://img.shields.io/badge/Made%20with-Streamlit-FF4B4B?logo=streamlit&logoColor=white)
 ![Ollama](https://img.shields.io/badge/Powered%20by-Ollama-000000?logo=openai&logoColor=white)
 ![FAISS](https://img.shields.io/badge/Vector%20Search-FAISS-0055A4?logo=apache&logoColor=white)
-![Python](https://img.shields.io/badge/Python-3.10+-3776AB?logo=python&logoColor=white)
+![Python](https://img.shields.io/badge/Python-3.11+-3776AB?logo=python&logoColor=white)
 ![License](https://img.shields.io/badge/License-MIT-green)
 
-# Schéma pipeline
-![Pipeline RAG](images/pipeline_rag_chatbot.png)
+
+Un assistant IA capable d’analyser et d’interroger un rapport PDF en langage naturel.
+Grâce à une architecture RAG (Retrieval-Augmented Generation), le chatbot combine recherche d’information et génération de texte pour fournir des réponses précises et contextualisées.
+
+## Points clés
+- Ollama (Mistral) → Modèle de langage open-source pour embeddings & génération
+- FAISS → Recherche vectorielle rapide et efficace
+- Streamlit → Interface web interactive et simple à utiliser
+
+## Fonctionnalités
+- Extraction et découpage automatique d’un PDF
+- Création d’embeddings avec mistral
+- Indexation avec FAISS
+- Recherche vectorielle des chunks pertinents
+- Génération de réponse contextualisée avec un LLM
+- Interface web interactive avec Streamlit
+
+## Architecture du pipeline
+Organigramme TD
+   - A[PDF Rapport] --> B[Extraction Texte]
+   - B --> C[Découpage en Chunks]
+   -  C --> D[Embeddings (Ollama)]
+   -  D --> E[FAISS Index]
+   -  F[Question Utilisateur] --> G[Embedding Question]
+   -  G --> H[Recherche FAISS]
+   - H --> I[Contexte Pertinent]
+   - I --> J[LLM (Mistral via Ollama)]
+   - J --> K[Réponse Contextualisée]
+   - K --> L[Interface Streamlit]
+### Schéma
+![Pipeline RAG](images/Pipeline_rag_chatbot_dark.png)
+
+## Installation et exécution
+### Prérequis :
+- Ollama installé et lancé
+- Téléchargement du modèle :
+
+ollama pull mistral
+
+ollama serve
+
+- Python 3.11 recommandé
+
+### Dépendances :
+---
+pip install streamlit faiss-cpu pypdf ollama
+---
+
+### Construction de l’index
+
+- Extrait le PDF, découpe en chunks, génère embeddings et sauvegarde :
+  
+python build_index.py
+  
+Cela crée :
+
+- docs.index : index FAISS
+- docs.json : chunks de texte associés
+
+### Lancer le chatbot
+- streamlit run app.py
+- 👉 Ouvre ton navigateur à http://localhost:8501
+
+Pose tes questions sur le PDF (ex : «Quelle est la place de la France dans l'économie européenne ?»).
+
+### Améliorations possibles
+
+- Support multi-PDFs
+
+- Indexation avec FAISS-IVF/HNSW pour grands corpus
+
+- Déploiement cloud (Streamlit Cloud, Hugging Face Spaces, Zure, ...)
+
+- Vérification des requêtes SQL pour sécurité
+
+- Ajout des métadonnées (numéro de page, position) pour citation précise
+
+### 👤 Auteur
+- Projet réalisé par Alseny
+- Objectif : démonstration d’un pipeline RAG appliqué à un rapport d’économie française.
