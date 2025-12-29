@@ -83,7 +83,6 @@ Pose tes questions sur le PDF (ex : «Quelle est la place de la France dans l'é
 
 - Ajout des métadonnées (numéro de page, position) pour citation précise
 
-### 👤 Auteur
-- Projet réalisé par Alseny
-- **Data Scientist confirmé orienté MLOps & GenAI**
+### Auteur
+**Alseny — Data Scientist confirmé orienté MLOps & GenAI**
 - Objectif : démonstration d’un pipeline RAG appliqué à un rapport d’économie française.
